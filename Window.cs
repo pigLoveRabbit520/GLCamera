@@ -94,11 +94,11 @@ namespace GLCamera
             _vertexArrayObject = GL.GenVertexArray();
             GL.BindVertexArray(_vertexArrayObject);
 
-            _vertexBufferObject = GL.GenBuffer();
+            _vertexBufferObject = GL.GenBuffer(); // VBO
             GL.BindBuffer(BufferTarget.ArrayBuffer, _vertexBufferObject);
             GL.BufferData(BufferTarget.ArrayBuffer, _vertices.Length * sizeof(float), _vertices, BufferUsageHint.StaticDraw);
 
-            _elementBufferObject = GL.GenBuffer();
+            _elementBufferObject = GL.GenBuffer(); // EBO，顶点索引可以存储在EBO中，索引缓冲对象
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, _elementBufferObject);
             GL.BufferData(BufferTarget.ElementArrayBuffer, _indices.Length * sizeof(uint), _indices, BufferUsageHint.StaticDraw);
 
