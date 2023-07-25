@@ -1,13 +1,12 @@
-﻿using OpenTK.Graphics.OpenGL4;
+using OpenTK.Graphics.OpenGL4;
 using System.Drawing;
 using System.Drawing.Imaging;
 using PixelFormat = OpenTK.Graphics.OpenGL4.PixelFormat;
 using StbImageSharp;
-using System.IO;
 
 namespace GLCamera.Common
 {
-    // A helper class, much like Shader, meant to simplify loading textures.
+    // A helper class, much like Shader, 旨在简化加载纹理。
     public class Texture
     {
         public readonly int Handle;
