@@ -63,6 +63,24 @@ namespace GLCamera
         public Window(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings)
             : base(gameWindowSettings, nativeWindowSettings)
         {
+            _shader = new Shader("Shaders/vert.glsl", "Shaders/frag.glsl");
+            _shader.Use();
+
+            _texture = Texture.LoadFromFile("Resources/container.png");
+            _texture.Use(TextureUnit.Texture0);
+
+            _texture2 = Texture.LoadFromFile("Resources/awesomeface.png");
+            _texture2.Use(TextureUnit.Texture1);
+
+            _shader.SetInt("texture0", 0);
+            _shader.SetInt("texture1", 1);
+
+            // We initialize the camera so that it is 3 units back from where the rectangle is.
+            // We also give it the proper aspect ratio.
+            _camera = new Camera(Vector3.UnitZ * 3, Size.X / (float)Size.Y);
+
+            // We make the mouse cursor invisible and captured so we can have proper FPS-camera movement.
+            CursorState = CursorState.Grabbed;
         }
 
         protected override void OnLoad()
@@ -84,9 +102,6 @@ namespace GLCamera
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, _elementBufferObject);
             GL.BufferData(BufferTarget.ElementArrayBuffer, _indices.Length * sizeof(uint), _indices, BufferUsageHint.StaticDraw);
 
-            _shader = new Shader("Shaders/vert.glsl", "Shaders/frag.glsl");
-            _shader.Use();
-
             var vertexLocation = _shader.GetAttribLocation("aPosition");
             GL.EnableVertexAttribArray(vertexLocation);
             GL.VertexAttribPointer(vertexLocation, 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), 0);
@@ -94,22 +109,6 @@ namespace GLCamera
             var texCoordLocation = _shader.GetAttribLocation("aTexCoord");
             GL.EnableVertexAttribArray(texCoordLocation);
             GL.VertexAttribPointer(texCoordLocation, 2, VertexAttribPointerType.Float, false, 5 * sizeof(float), 3 * sizeof(float));
-
-            _texture = Texture.LoadFromFile("Resources/container.png");
-            _texture.Use(TextureUnit.Texture0);
-
-            _texture2 = Texture.LoadFromFile("Resources/awesomeface.png");
-            _texture2.Use(TextureUnit.Texture1);
-
-            _shader.SetInt("texture0", 0);
-            _shader.SetInt("texture1", 1);
-
-            // We initialize the camera so that it is 3 units back from where the rectangle is.
-            // We also give it the proper aspect ratio.
-            _camera = new Camera(Vector3.UnitZ * 3, Size.X / (float)Size.Y);
-
-            // We make the mouse cursor invisible and captured so we can have proper FPS-camera movement.
-            CursorState = CursorState.Grabbed;
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)
@@ -126,6 +125,8 @@ namespace GLCamera
             _texture2.Use(TextureUnit.Texture1);
             _shader.Use();
 
+            // Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(_time))
+            // 这段代码加了旋转
             var model = Matrix4.Identity * Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(_time));
             _shader.SetMatrix4("model", model);
             _shader.SetMatrix4("view", _camera.GetViewMatrix());
