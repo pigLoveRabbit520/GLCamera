@@ -34,13 +34,19 @@ namespace GLCamera
             1, 2, 3
         };
 
+        private int indexCount = 36; // cube 索引数量
+
         private int _elementBufferObject;
 
         private int _vertexBufferObject;
 
         private int _vertexArrayObject;
 
+        private int _vertexArrayObjectForCube;
+
         private Shader _shader;
+
+        private Shader _shaderCube;
 
         private Texture _texture;
 
@@ -75,12 +81,85 @@ namespace GLCamera
             _shader.SetInt("texture0", 0);
             _shader.SetInt("texture1", 1);
 
+            _shaderCube = new Shader("Shaders/cube/vert.glsl", "Shaders/cube/frag.glsl");
+
             // We initialize the camera so that it is 3 units back from where the rectangle is.
             // We also give it the proper aspect ratio.
             _camera = new Camera(Vector3.UnitZ * 3, Size.X / (float)Size.Y);
 
             // We make the mouse cursor invisible and captured so we can have proper FPS-camera movement.
             CursorState = CursorState.Grabbed;
+        }
+
+        /// <summary>
+        /// 方块mesh
+        /// </summary>
+        private void GenerateCube()
+        {
+            float len = 1.0f;
+
+            // colors 
+            var (c0r, c0b, c0g, c0a) = (0.1f, 0.5f, 0.1f, 1.0f);
+            var (c1r, c1b, c1g, c1a) = (0.1f, 0.5f, 0.6f, 1.0f); 
+            var (c2r, c2b, c2g, c2a) = (0.3f, 0.8f, 0.2f, 1.0f); 
+            var (c3r, c3b, c3g, c3a) = (0.1f, 0.3f, 0.1f, 1.0f); 
+            var (c4r, c4b, c4g, c4a) = (0.4f, 0.5f, 0.1f, 1.0f); 
+            var (c5r, c5b, c5g, c5a) = (0.5f, 0.2f, 0.3f, 1.0f);
+            var (c6r, c6b, c6g, c6a) = (0.1f, 0.2f, 0.4f, 1.0f); 
+            var (c7r, c7b, c7g, c7a) = (0.7f, 0.5f, 0.5f, 1.0f); 
+
+            float[] vertices = 
+            {
+                -len, -len, -len, c0r, c0b, c0g, c0a,  // 0
+                len, -len, -len, c1r, c1b, c1g, c1a,  // 1
+                len, -len,  len, c2r, c2b, c2g, c2a,  // 2
+                -len, -len,  len, c3r, c3b, c3g, c3a,  // 3
+
+                -len,  len, -len, c4r, c4b, c4g, c4a,   // 4
+                len,  len, -len, c5r, c5b, c5g, c5a,   // 5
+                len,  len,  len, c6r, c6b, c6g, c6a,   // 6
+                -len,  len,  len, c7r, c7b, c7g, c7a    // 7
+            };
+
+            int[] indices = 
+            {
+                7, 6, 2,  7, 2, 3,      // front face
+                4, 5, 1,  4, 1, 0,      // back face
+                4, 5, 6,  4, 6, 7,      // top face
+                0, 1, 2,  0, 2, 3,      // bottom face
+                6, 5, 1,  6, 1, 2,      // right face
+                7, 4, 0,  7, 0, 3       // left face
+            };
+
+
+            GenerateVAOforCube(len, vertices, indices);
+        }
+
+        private void GenerateVAOforCube(float len, float[] vertices, int[] indices)
+        {
+            var vao = GL.GenVertexArray();
+            _vertexArrayObjectForCube = vao;
+            GL.BindVertexArray(vao);
+            // create vbo to store the data in opengl and copy data to vbo
+            var vbo = GL.GenBuffer();
+            GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
+            GL.BufferData(BufferTarget.ArrayBuffer, sizeof(float) * vertices.Length, vertices, BufferUsageHint.StaticDraw);
+            // create ebo
+            var ebo = GL.GenBuffer();
+            GL.BindBuffer(BufferTarget.ElementArrayBuffer, ebo);
+            GL.BufferData(BufferTarget.ElementArrayBuffer, sizeof(int) * indices.Length, indices, BufferUsageHint.StaticDraw);
+            // tell opengl how to use the data via attributes
+            // position attribute
+            // int attrPosition_Position = GL.GetAttribLocation(shader.ShaderProgram, "aPos");
+            int attrPosition_Position = 0;
+            GL.EnableVertexAttribArray(attrPosition_Position);
+            GL.VertexAttribPointer(attrPosition_Position, 3, VertexAttribPointerType.Float, false, sizeof(float) * 7, 0);
+            int attrPosition_Color = 1;
+            GL.EnableVertexAttribArray(attrPosition_Color);
+            GL.VertexAttribPointer(attrPosition_Color, 4, VertexAttribPointerType.Float, false, sizeof(float) * 7, sizeof(float) * 3);
+            
+            GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
+            GL.BindVertexArray(0);
         }
 
         protected override void OnLoad()
@@ -109,6 +188,9 @@ namespace GLCamera
             var texCoordLocation = _shader.GetAttribLocation("aTexCoord");
             GL.EnableVertexAttribArray(texCoordLocation);
             GL.VertexAttribPointer(texCoordLocation, 2, VertexAttribPointerType.Float, false, 5 * sizeof(float), 3 * sizeof(float));
+            GL.BindVertexArray(0);
+            // 创建方块
+            GenerateCube();
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)
@@ -133,6 +215,16 @@ namespace GLCamera
             _shader.SetMatrix4("projection", _camera.GetProjectionMatrix());
 
             GL.DrawElements(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedInt, 0);
+
+            GL.BindVertexArray(0);
+            GL.BindVertexArray(_vertexArrayObjectForCube);
+            _shaderCube.Use();
+
+            _shaderCube.SetMatrix4("model", Matrix4.CreateTranslation(2, 0, 0));
+            _shaderCube.SetMatrix4("view", _camera.GetViewMatrix());
+            _shaderCube.SetMatrix4("projection", _camera.GetProjectionMatrix());
+
+            GL.DrawElements(PrimitiveType.Triangles, indexCount, DrawElementsType.UnsignedInt, 0);
 
             SwapBuffers();
         }
