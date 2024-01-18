@@ -200,7 +200,7 @@ namespace GLCamera
             _time += 4.0 * e.Time;
 
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-
+            // 步骤就是 1.绑定vao 2.使用shader实例
             GL.BindVertexArray(_vertexArrayObject);
 
             _texture.Use(TextureUnit.Texture0);
