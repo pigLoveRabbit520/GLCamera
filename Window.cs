@@ -40,9 +40,9 @@ namespace GLCamera
 
         private int _vertexBufferObject;
 
-        private int _vertexArrayObject;
+        private int _vaoForMyModel;
 
-        private int _vertexArrayObjectForCube;
+        private int _vaoForCube;
 
         private Shader _shader;
 
@@ -132,13 +132,13 @@ namespace GLCamera
             };
 
 
-            GenerateVAOforCube(len, vertices, indices);
+            GenerateVAOForCube(len, vertices, indices);
         }
 
-        private void GenerateVAOforCube(float len, float[] vertices, int[] indices)
+        private void GenerateVAOForCube(float len, float[] vertices, int[] indices)
         {
             var vao = GL.GenVertexArray();
-            _vertexArrayObjectForCube = vao;
+            _vaoForCube = vao;
             GL.BindVertexArray(vao);
             // create vbo to store the data in opengl and copy data to vbo
             var vbo = GL.GenBuffer();
@@ -162,16 +162,10 @@ namespace GLCamera
             GL.BindVertexArray(0);
         }
 
-        protected override void OnLoad()
+        private void generateMyModel(Shader _shader)
         {
-            base.OnLoad();
-
-            GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-
-            GL.Enable(EnableCap.DepthTest);
-
-            _vertexArrayObject = GL.GenVertexArray();
-            GL.BindVertexArray(_vertexArrayObject);
+            _vaoForMyModel = GL.GenVertexArray();
+            GL.BindVertexArray(_vaoForMyModel);
 
             _vertexBufferObject = GL.GenBuffer(); // VBO
             GL.BindBuffer(BufferTarget.ArrayBuffer, _vertexBufferObject);
@@ -189,6 +183,18 @@ namespace GLCamera
             GL.EnableVertexAttribArray(texCoordLocation);
             GL.VertexAttribPointer(texCoordLocation, 2, VertexAttribPointerType.Float, false, 5 * sizeof(float), 3 * sizeof(float));
             GL.BindVertexArray(0);
+        }
+
+        protected override void OnLoad()
+        {
+            base.OnLoad();
+
+            GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+
+            GL.Enable(EnableCap.DepthTest);
+
+            // 创建我的模型
+            generateMyModel(_shader);
             // 创建方块
             GenerateCube();
         }
@@ -201,7 +207,7 @@ namespace GLCamera
 
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             // 步骤就是 1.绑定vao 2.使用shader实例
-            GL.BindVertexArray(_vertexArrayObject);
+            GL.BindVertexArray(_vaoForMyModel);
 
             _texture.Use(TextureUnit.Texture0);
             _texture2.Use(TextureUnit.Texture1);
@@ -217,7 +223,7 @@ namespace GLCamera
             GL.DrawElements(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedInt, 0);
 
             GL.BindVertexArray(0);
-            GL.BindVertexArray(_vertexArrayObjectForCube);
+            GL.BindVertexArray(_vaoForCube);
             _shaderCube.Use();
 
             _shaderCube.SetMatrix4("model", Matrix4.CreateTranslation(2, 0, 0));
@@ -274,25 +280,25 @@ namespace GLCamera
                 _camera.Position -= _camera.Up * cameraSpeed * (float)e.Time; // Down
             }
 
-            // Get the mouse state
-            var mouse = MouseState;
+            // // Get the mouse state
+            // var mouse = MouseState;
 
-            if (_firstMove) // This bool variable is initially set to true.
-            {
-                _lastPos = new Vector2(mouse.X, mouse.Y);
-                _firstMove = false;
-            }
-            else
-            {
-                // Calculate the offset of the mouse position
-                var deltaX = mouse.X - _lastPos.X;
-                var deltaY = mouse.Y - _lastPos.Y;
-                _lastPos = new Vector2(mouse.X, mouse.Y);
+            // if (_firstMove) // This bool variable is initially set to true.
+            // {
+            //     _lastPos = new Vector2(mouse.X, mouse.Y);
+            //     _firstMove = false;
+            // }
+            // else
+            // {
+            //     // Calculate the offset of the mouse position
+            //     var deltaX = mouse.X - _lastPos.X;
+            //     var deltaY = mouse.Y - _lastPos.Y;
+            //     _lastPos = new Vector2(mouse.X, mouse.Y);
 
-                // Apply the camera pitch and yaw (we clamp the pitch in the camera class)
-                _camera.Yaw += deltaX * sensitivity;
-                _camera.Pitch -= deltaY * sensitivity; // Reversed since y-coordinates range from bottom to top
-            }
+            //     // Apply the camera pitch and yaw (we clamp the pitch in the camera class)
+            //     _camera.Yaw += deltaX * sensitivity;
+            //     _camera.Pitch -= deltaY * sensitivity; // Reversed since y-coordinates range from bottom to top
+            // }
         }
 
         // In the mouse wheel function, we manage all the zooming of the camera.
